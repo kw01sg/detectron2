@@ -1,0 +1,5 @@
+_BASE_: "./deeplab_v3_R_103_os16_mg124_poly_90k_bs16.yaml"
+INPUT:
+  MIN_SIZE_TRAIN: (760, )
+DATASETS:
+  TRAIN: ("synthia",)

@@ -7,17 +7,26 @@ DeepLab Training Script.
 This script is a simplified version of the training script in detectron2/tools.
 """
 
-import os
 import torch
 
 import detectron2.data.transforms as T
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
-from detectron2.data import DatasetMapper, MetadataCatalog, build_detection_train_loader
+from detectron2.data import (
+    DatasetCatalog,
+    DatasetMapper,
+    MetadataCatalog,
+    build_detection_train_loader,
+)
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
 from detectron2.evaluation import CityscapesSemSegEvaluator, DatasetEvaluators, SemSegEvaluator
 from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
+
+import os
+from config import SYNTHIA_INPUT_PATH, SYNTHIA_OUTPUT_PATH
+from pathlib import Path
+from utils.data import IGNORE_LABEL, get_synthia_dataset
 
 
 def build_sem_seg_train_aug(cfg):
@@ -112,6 +121,14 @@ def setup(args):
 
 def main(args):
     cfg = setup(args)
+
+    if 'synthia' in cfg.DATASETS.TRAIN:
+        DatasetCatalog.register('synthia',
+                                lambda: get_synthia_dataset(Path(SYNTHIA_INPUT_PATH),
+                                                            Path(SYNTHIA_OUTPUT_PATH)))
+        cityscape_classes = MetadataCatalog.get('cityscapes_fine_sem_seg_train').stuff_classes
+        MetadataCatalog.get('synthia').stuff_classes = cityscape_classes
+        MetadataCatalog.get('synthia').ignore_label = IGNORE_LABEL
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
